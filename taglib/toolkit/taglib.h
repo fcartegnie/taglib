@@ -44,6 +44,9 @@
 #define TAGLIB_CONSTRUCT_BITSET(x) static_cast<unsigned long>(x)
 #endif
 
+/* VLC Specific patches implementations */
+#define VLC_PATCHED_TAGLIB_ID3V2_READSTYLE
+
 #include <string>
 
 //! A namespace for all TagLib related classes and functions

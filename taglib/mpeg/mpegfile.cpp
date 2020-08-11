@@ -80,30 +80,31 @@ public:
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-MPEG::File::File(FileName file, bool readProperties, Properties::ReadStyle) :
+MPEG::File::File(FileName file,
+                 bool readProperties, Properties::ReadStyle readStyle) :
   TagLib::File(file),
   d(new FilePrivate())
 {
   if(isOpen())
-    read(readProperties);
+    read(readProperties, readStyle);
 }
 
 MPEG::File::File(FileName file, ID3v2::FrameFactory *frameFactory,
-                 bool readProperties, Properties::ReadStyle) :
+                 bool readProperties, Properties::ReadStyle readStyle) :
   TagLib::File(file),
   d(new FilePrivate(frameFactory))
 {
   if(isOpen())
-    read(readProperties);
+    read(readProperties, readStyle);
 }
 
 MPEG::File::File(IOStream *stream, ID3v2::FrameFactory *frameFactory,
-                 bool readProperties, Properties::ReadStyle) :
+                 bool readProperties, Properties::ReadStyle readStyle) :
   TagLib::File(stream),
   d(new FilePrivate(frameFactory))
 {
   if(isOpen())
-    read(readProperties);
+    read(readProperties, readStyle);
 }
 
 MPEG::File::~File()
@@ -441,11 +442,11 @@ bool MPEG::File::hasAPETag() const
 // private members
 ////////////////////////////////////////////////////////////////////////////////
 
-void MPEG::File::read(bool readProperties)
+void MPEG::File::read(bool readProperties, Properties::ReadStyle readStyle)
 {
   // Look for an ID3v2 tag
 
-  d->ID3v2Location = findID3v2();
+  d->ID3v2Location = findID3v2(readStyle);
 
   if(d->ID3v2Location >= 0) {
     d->tag.set(ID3v2Index, new ID3v2::Tag(this, d->ID3v2Location, d->ID3v2FrameFactory));
@@ -478,7 +479,7 @@ void MPEG::File::read(bool readProperties)
   ID3v1Tag(true);
 }
 
-long MPEG::File::findID3v2()
+long MPEG::File::findID3v2(Properties::ReadStyle readStyle)
 {
   if(!isValid())
     return -1;
@@ -497,6 +498,9 @@ long MPEG::File::findID3v2()
     return 0;
 
   if(firstSyncByte(data[0]) && secondSynchByte(data[1]))
+    return -1;
+
+  if(readStyle < Properties::ReadStyle::Accurate)
     return -1;
 
   // Look for the entire file, if neither an MEPG frame or ID3v2 tag was found
